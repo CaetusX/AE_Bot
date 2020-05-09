@@ -5,3 +5,4 @@ This is a bot for Another Eden. It has several running modes
 3) Hitting bell mode: It can hit the bell in Nagsham up to 999 hits or hit up to 31 hits and repeat the loop
 4) Jumping rope mode: It can jump rope in either Baruoki or Ratle endless
 5) Separating grasta mode: It can separate specified grasta in Izana
+6) Screen capture mode: It can capture the screen
