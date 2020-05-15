@@ -55,7 +55,7 @@ Ptr<OCRTesseract> ocr;
 HDC hdc;
 HDC hDest;
 HBITMAP hbDesktop;
-Mat bitbltPic, fishIcon, exclamationIcon, exclSepcterIcon, exclGrastaIcon, exclChamberIcon, exclChamberPlasmaIcon, exclKMSIcon, swampFishIcon, doorDefaultIcon, doorKunlunIcon, doorLOMIcon, stairDefaultIcon, stairDownIcon, stairLOMIcon;
+Mat bitbltPic, fishIcon, exclamationIcon, exclRiftIcon, exclSepcterIcon, exclGrastaIcon, exclChamberIcon, exclChamberPlasmaIcon, exclKMSIcon, swampFishIcon, doorDefaultIcon, doorKunlunIcon, doorLOMIcon, stairDefaultIcon, stairDownIcon, stairLOMIcon;
 Mat afBarEmptyPic, afBarFullPic, hitBellPic, jmpRopePic1, jmpRopePic2, jmpRopePic3, jmpRopePic4;
 
 std::random_device dev;
@@ -144,6 +144,8 @@ pair<int, int> m_Button_Antiquity = { 116, 148 };
 pair<int, int> m_Button_Present = { 279, 153 };
 pair<int, int> m_Button_Future = { 444, 151 };
 pair<int, int> m_Button_EndOfTimeLoc = { 610, 137 };
+pair<int, int> m_Button_SpacetimeRift = { 873, 477 };
+pair<int, int> m_Button_Tree = { 589, 78 };
 
 vector<Mat>* currentMonsterVec = NULL;
 vector<Mat> m_MonsterVec_Baruoki;
@@ -172,7 +174,7 @@ vector<imageInfo> m_DynamicImage;
 enum baitType { Fishing_Dango, Worm, Unexpected_Worm, Shopaholic_Clam, Spree_Snail, Dressed_Crab, Tear_Crab, Foamy_Worm, Bubbly_Worm, Snitch_Sardines, Blabber_Sardines, Crab_Cake, Premium_Crab_Cake };
 enum doorType { doorDefault, doorKunlun, doorLOM};
 enum stairType { stairDefault, stairDown, stairLOM };
-enum exclType { exclDefault, exclSepcter, exclGrasta, exclChamber, exclChamberPlasma, exclKMS};
+enum exclType { exclDefault, exclRift, exclSepcter, exclGrasta, exclChamber, exclChamberPlasma, exclKMS};
 
 struct fishingSpot
 {
@@ -396,6 +398,11 @@ pair<int, int> findExclamationIcon(exclType whichExcl = exclDefault)
 	pair<int, int> exclIcon;
 
 	switch (whichExcl) {
+	case exclRift:
+		exclIcon = findIcon(exclRiftIcon);
+		exclIcon.first += (int)round(50 * widthPct);
+		exclIcon.second += (int)round(70 * heightPct);
+		break;
 	case exclSepcter:
 		exclIcon = findIcon(exclSepcterIcon);
 		exclIcon.first += (int)round(70 * widthPct);
@@ -1521,13 +1528,13 @@ int goToTargetLocation(vector<pathInfo> pathInfoList)
 			}
 			else
 			{
-				if (curValue1.compare("MapButton") == 0)
-				{
-					leftClick(m_Button_Map, 3500);
-				}
-				else if (curValue1.compare("YesButton") == 0)
+				if (curValue1.compare("YesButton") == 0)
 				{
 					leftClick(m_Button_Yes);
+				}
+				else if (curValue1.compare("MapButton") == 0)
+				{
+					leftClick(m_Button_Map, 3500);
 				}
 				else if (curValue1.compare("Antiquity") == 0)
 				{
@@ -1540,6 +1547,10 @@ int goToTargetLocation(vector<pathInfo> pathInfoList)
 				else if (curValue1.compare("Future") == 0)
 				{
 					leftClick(m_Button_Future);
+				}
+				else if (curValue1.compare("EndOfTimeLoc") == 0)
+				{
+					leftClick(m_Button_EndOfTimeLoc);
 				}
 				else
 				{
@@ -1612,6 +1623,11 @@ int goToTargetLocation(vector<pathInfo> pathInfoList)
 			if (curValue1.compare("Exclamation") == 0)
 			{
 				pair<int, int> pnt = findExclamationIcon();
+				leftClick(pnt.first, pnt.second, 2000, false);
+			}
+			if (curValue1.compare("ExclamationRift") == 0)
+			{
+				pair<int, int> pnt = findExclamationIcon(exclRift);
 				leftClick(pnt.first, pnt.second, 2000, false);
 			}
 			if (curValue1.compare("ExclamationSpecter") == 0)
@@ -1741,15 +1757,15 @@ void goToSpacetimeRift(bool heal = true)
 
 	leftClick(m_Button_Map, 3500);
 	leftClick(m_Button_EndOfTimeLoc);
-	leftClick(869, 482);
-	leftClick(869, 482);
+	leftClick(m_Button_SpacetimeRift);
+	leftClick(m_Button_SpacetimeRift);
 	leftClick(m_Button_Yes);
 	longSleepR(loadTime);
 
 	if (heal)
 	{
-		leftClick(589, 78);
-		leftClick(589, 78);
+		leftClick(m_Button_Tree);
+		leftClick(m_Button_Tree);
 		leftClick(m_Button_Yes, 4000);
 		leftClick(m_Button_Yes);
 		leftClick(m_Button_Yes);
@@ -2636,6 +2652,41 @@ void loadSettingConfig()
 			parseXYinfo(value);
 			m_Button_AF = xyPosition;
 		}
+		else if (key.compare("MapButton") == 0)
+		{
+			parseXYinfo(value);
+			m_Button_Map = xyPosition;
+		}
+		else if (key.compare("Antiquity") == 0)
+		{
+			parseXYinfo(value);
+			m_Button_Antiquity = xyPosition;
+		}
+		else if (key.compare("Present") == 0)
+		{
+			parseXYinfo(value);
+			m_Button_Present = xyPosition;
+		}
+		else if (key.compare("Future") == 0)
+		{
+			parseXYinfo(value);
+			m_Button_Future = xyPosition;
+		}
+		else if (key.compare("EndOfTimeLoc") == 0)
+		{
+			parseXYinfo(value);
+			m_Button_EndOfTimeLoc = xyPosition;
+		}
+		else if (key.compare("SpacetimeRift") == 0)
+		{
+			parseXYinfo(value);
+			m_Button_SpacetimeRift = xyPosition;
+		}
+		else if (key.compare("Tree") == 0)
+		{
+			parseXYinfo(value);
+			m_Button_Tree = xyPosition;
+		}
 		else if (key.compare("CharactersButtons") == 0)
 		{
 			m_Button_Characters.clear();
@@ -2855,6 +2906,7 @@ void setup()
 
 	fishIcon = imread("images\\fish.png", IMREAD_UNCHANGED);
 	exclamationIcon = imread("images\\exclamation.png", IMREAD_UNCHANGED);
+	exclRiftIcon = imread("images\\exclamationRift.png", IMREAD_UNCHANGED);
 	exclSepcterIcon = imread("images\\exclamationSepcter.png", IMREAD_UNCHANGED);
 	exclGrastaIcon = imread("images\\exclamationGrasta.png", IMREAD_UNCHANGED);
 	exclChamberIcon = imread("images\\exclamationChamber.png", IMREAD_UNCHANGED);
@@ -2899,6 +2951,7 @@ void setup()
 	{
 		resize(fishIcon, fishIcon, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
 		resize(exclamationIcon, exclamationIcon, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(exclRiftIcon, exclRiftIcon, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
 		resize(exclSepcterIcon, exclSepcterIcon, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
 		resize(exclGrastaIcon, exclGrastaIcon, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
 		resize(exclChamberIcon, exclChamberIcon, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
