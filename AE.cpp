@@ -737,7 +737,10 @@ bool inBattle()
 	Mat partialPic;
 	bitBltWholeScreen();
 	copyPartialPic(partialPic, 106, 39, 77, 37);
-	return getText(partialPic).compare("Status") == 0;
+	bool inBattleResult = (getText(partialPic).compare("Status") == 0);
+
+	if (m_IsDebug_Fighting) cout << "in battle " << inBattleResult << endl;
+	return inBattleResult;
 }
 
 bool endBattle()
@@ -750,6 +753,8 @@ bool endBattle()
 
 	copyPartialPic(partialPic2, 400, 70, 660, 80);
 	bool endBattleResult2 = (getText(partialPic2).find("Got") != string::npos);
+	
+	if (m_IsDebug_Fighting) cout << "end battle " << endBattleResult1 << " " << endBattleResult2 << endl;
 
 	return (endBattleResult1 || endBattleResult2);
 }
@@ -764,13 +769,6 @@ int engageMobFightNow(int horrorThreshold = 7000)
 	int iRun = 0;
 	vector<int> lastSkillsRow = {0, 0, 0, 0};
 	bool isThisPSlime = false;
-
-	sleepR(1000);
-
-	if (!inBattle()) // not a fight
-	{
-		return status_NotFight;
-	}
 
 	if (m_IsPrint) captureScreenNow("Mob");
 
@@ -809,7 +807,7 @@ int engageMobFightNow(int horrorThreshold = 7000)
 			}
 		}
 
-		if (lowestMSD < horrorThreshold) //If its not a monster, it must be a horror
+		if (lowestMSD < horrorThreshold) //It should be a plantium slime
 		{
 			isThisPSlime = true;
 
@@ -849,27 +847,29 @@ int engageMobFightNow(int horrorThreshold = 7000)
 			{
 				lastSkillsRow[j] = iSkill;
 
-				leftClick(m_Button_Characters[j], 200);
+				leftClick(m_Button_Characters[j], 100);
 				if (iSkill == m_Skill_Exchange_A || iSkill == m_Skill_Exchange_B)
 				{
-					leftClick(m_Button_Skills[m_Skill_Exchange], 200);
-					leftClick(m_Button_Characters[iSkill - m_Skill_Exchange + m_CharacterFrontline], 200);
+					leftClick(m_Button_Skills[m_Skill_Exchange], 100);
+					leftClick(m_Button_Characters[iSkill - m_Skill_Exchange + m_CharacterFrontline], 100);
 				}
 				else
-					leftClick(m_Button_Skills[iSkill], 200);
+					leftClick(m_Button_Skills[iSkill], 100);
 
 				// Click normal skill in case the skill is blocked
-				leftClick(m_Button_Skills[0], 200);
+				leftClick(m_Button_Skills[0], 100);
 				// Click front buttom in case someone is defeated
-				leftClick(m_Button_Skills[4], 200);
+				leftClick(m_Button_Skills[4], 100);
 				// Click somewhere else in case someone is disabled
-				leftClick(m_Button_Yes, 200);
+				leftClick(m_Button_Yes, 100);
 			}
 		}
 
 		if (m_IsDebug_Fighting) cout << endl;
 
-		clickAttack(500);
+		clickAttack(200);
+
+		if (m_IsDebug_Fighting) cout << "Attack" << endl;
 
 		lastrawtime = time(NULL);
 		localtime_s(&timeinfo, &lastrawtime);
@@ -889,18 +889,25 @@ int engageMobFightNow(int horrorThreshold = 7000)
 				break;
 			}
 
+			if (m_IsDebug_Fighting) cout << "waiting ..." << endl;
+
 			if (endBattle())
 			{
+				if (m_IsDebug_Fighting) cout << "Battle ends" << endl;
 				break;
 			}
-			Sleep(500);
+			Sleep(200);
 		}
 
 		iRun++;
 	} while (inBattle());
 
-	Sleep(1000);
-	clickAttack(); //Get past the results screen
+	clickAttack(200); //Get past the results screen
+	if (m_IsDebug_Fighting) cout << "List battle results..." << endl;
+	clickAttack(200); //Get past the results screen
+	if (m_IsDebug_Fighting) cout << "Clear battle results..." << endl;
+	clickAttack(200); //Get past the results screen
+	if (m_IsDebug_Fighting) cout << "Reset position..." << endl;
 
 	if (runState == grindingLOMSlimeState)
 	{
@@ -911,6 +918,13 @@ int engageMobFightNow(int horrorThreshold = 7000)
 
 int fightUntilEnd()
 {
+	sleepR(1000);
+
+	if (!inBattle()) // not a fight
+	{
+		return status_NotFight;
+	}
+
 	int resValue = engageMobFightNow();
 	return resValue;
 }
@@ -3751,6 +3765,8 @@ int grindingRun()
 	lastFight = rawtime;
 	strftime(buflastfight, sizeof(buflastfight), "%Y-%m-%d_%H-%M-%S", &timeinfo);
 
+	int currentDirection = LEFT;
+
 	while (currentGrindingCounter < m_Fight_GrindingCount || m_Fight_EndlessGrinding)
 	{
 		while (!inBattle())
@@ -3772,12 +3788,20 @@ int grindingRun()
 
 			if (m_Fight_GrindingDirection == LR)
 			{
-				Walk(LEFT, m_Fight_GrindingStep, 200);
-				Walk(RIGHT, m_Fight_GrindingStep, 200);
+				currentDirection = (currentDirection + 1) % 2;
 			}
 			else
 			{
-				Walk(m_Fight_GrindingDirection, m_Fight_GrindingStep, 200);
+				currentDirection = m_Fight_GrindingDirection;
+			}
+
+			switch (currentDirection) {
+			case LEFT:
+				Walk(LEFT, m_Fight_GrindingStep, 10);
+				break;
+			case RIGHT:
+			default:
+				Walk(RIGHT, m_Fight_GrindingStep, 10);
 			}
 		}
 
