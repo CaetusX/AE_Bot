@@ -29,6 +29,7 @@ enum grastaType { grasta_Attack, grasta_Life, grasta_Support, grasta_Special};
 int m_grastaType;
 vector<string> m_grastaNames;
 
+HWND windowTopLevel;
 HWND window;
 
 int M_WIDTH = (int) 1745.0;
@@ -113,6 +114,7 @@ int m_Fight_AFInterval = 100;
 int m_Fight_AFFullThreshold = 1000;
 int m_Fight_GrindingCount = 10;
 int m_Fight_Timeout = 60;
+int m_Fight_ActionInterval = 100;
 bool m_Fight_GoToSpacetimeRift = true;
 bool m_Fight_EndlessGrinding = false;
 
@@ -358,7 +360,9 @@ void leftClick(int x, int y, int sTime = 2000, bool changeLoc = true)
 
 	int randX = (boolRand(dev) ? lClickPixelRand(rng) : ((-1) * lClickPixelRand(rng)));
 	int randY = (boolRand(dev) ? lClickPixelRand(rng) : ((-1) * lClickPixelRand(rng)));
-	SendMessage(window, WM_LBUTTONDOWN, 0, MAKELPARAM(x + randX, y + randY));
+
+	SendMessage(window, WM_MOUSEACTIVATE, (WPARAM) windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+	SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(x + randX, y + randY));
 	sleepR(10);
 	SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(x + randX, y + randY));
 
@@ -520,7 +524,9 @@ void drag(directionInfo botDirection, int slideDistance, int xStart, int yStart)
 		slideDistance = (int) round(slideDistance * widthPct);
 		xStart = (boolRand(rng) ? xStart + slideLClick(rng) : xStart - slideLClick(rng));
 		yStart = (boolRand(rng) ? yStart + slideLClick(rng) : yStart - slideLClick(rng));
-		SendMessage(window, WM_LBUTTONDOWN, 0, MAKELPARAM(xStart, yStart));
+
+		SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+		SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xStart, yStart));
 		sleepR(10);
 
 		for (int i = 0; i < slideDistance; ++i)
@@ -541,7 +547,9 @@ void drag(directionInfo botDirection, int slideDistance, int xStart, int yStart)
 		slideDistance = (int) round(slideDistance * widthPct);
 		xStart = (boolRand(rng) ? xStart + slideLClick(rng) : xStart - slideLClick(rng));
 		yStart = (boolRand(rng) ? yStart + slideLClick(rng) : yStart - slideLClick(rng));
-		SendMessage(window, WM_LBUTTONDOWN, 0, MAKELPARAM(xStart, yStart));
+
+		SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+		SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xStart, yStart));
 		sleepR(10);
 
 		for (int i = 0; i < slideDistance; ++i)
@@ -562,7 +570,9 @@ void drag(directionInfo botDirection, int slideDistance, int xStart, int yStart)
 		slideDistance = (int) round(slideDistance * heightPct);
 		xStart = (boolRand(rng) ? xStart + slideLClick(rng) : xStart - slideLClick(rng));
 		yStart = (boolRand(rng) ? yStart + slideLClick(rng) : yStart - slideLClick(rng));
-		SendMessage(window, WM_LBUTTONDOWN, 0, MAKELPARAM(xStart, yStart));
+
+		SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+		SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xStart, yStart));
 		sleepR(10);
 
 		for (int i = 0; i < slideDistance; ++i)
@@ -583,7 +593,9 @@ void drag(directionInfo botDirection, int slideDistance, int xStart, int yStart)
 		slideDistance = (int) round(slideDistance * heightPct);
 		xStart = (boolRand(rng) ? xStart + slideLClick(rng) : xStart - slideLClick(rng));
 		yStart = (boolRand(rng) ? yStart + slideLClick(rng) : yStart - slideLClick(rng));
-		SendMessage(window, WM_LBUTTONDOWN, 0, MAKELPARAM(xStart, yStart));
+
+		SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+		SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xStart, yStart));
 		sleepR(10);
 
 		for (int i = 0; i < slideDistance; ++i)
@@ -632,7 +644,8 @@ void Walk(directionInfo botDirection, int time, int sleepTime = 3000)
 	int yStart = (boolRand(rng) ? (yCenter + slideLClick(rng)) : (yCenter - slideLClick(rng)));
 
 	//Start walking left
-	SendMessage(window, WM_LBUTTONDOWN, 0, MAKELPARAM(xStart, yStart));
+	SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+	SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xStart, yStart));
 	Sleep(10);
 
 	switch (botDirection)
@@ -847,21 +860,21 @@ int engageMobFightNow(int horrorThreshold = 7000)
 			{
 				lastSkillsRow[j] = iSkill;
 
-				leftClick(m_Button_Characters[j], 100);
+				leftClick(m_Button_Characters[j], m_Fight_ActionInterval);
 				if (iSkill == m_Skill_Exchange_A || iSkill == m_Skill_Exchange_B)
 				{
-					leftClick(m_Button_Skills[m_Skill_Exchange], 100);
-					leftClick(m_Button_Characters[iSkill - m_Skill_Exchange + m_CharacterFrontline], 100);
+					leftClick(m_Button_Skills[m_Skill_Exchange], m_Fight_ActionInterval);
+					leftClick(m_Button_Characters[iSkill - m_Skill_Exchange + m_CharacterFrontline], m_Fight_ActionInterval);
 				}
 				else
-					leftClick(m_Button_Skills[iSkill], 100);
+					leftClick(m_Button_Skills[iSkill], m_Fight_ActionInterval);
 
 				// Click normal skill in case the skill is blocked
-				leftClick(m_Button_Skills[0], 100);
+				leftClick(m_Button_Skills[0], m_Fight_ActionInterval);
 				// Click front buttom in case someone is defeated
-				leftClick(m_Button_Skills[4], 100);
+				leftClick(m_Button_Skills[4], m_Fight_ActionInterval);
 				// Click somewhere else in case someone is disabled
-				leftClick(m_Button_Yes, 100);
+				leftClick(m_Button_Yes, m_Fight_ActionInterval);
 			}
 		}
 
@@ -1806,22 +1819,8 @@ void goToFishVendor()
 	};
 
 	goToSpacetimeRift(false);
-	leftClick(m_Button_Map, 3500);
-	leftClick(m_Button_Antiquity);
-
-	for (auto i = 0; i < m_Button_MapButtons.size(); i++)
-	{
-		if (m_Button_MapButtons[i].buttonName.compare("KiraBeach") == 0)
-		{ 
-			leftClick(m_Button_MapButtons[i].xyPosition);
-			break;
-		}
-	}
-
-	leftClick(m_Button_Yes);
-	longSleepR(loadTime);
-	Walk(LEFT, 1000);
-	longSleepR(1000);
+	currentLocation = "Fish Vendor";
+	goToFishingLocation();
 
 	pair<int, int> pnt = findExclamationIcon();
 	leftClick(pnt.first, pnt.second, 2000, false);
@@ -2495,6 +2494,14 @@ void loadSettingConfig()
 			m_IsDebug_Fishing = debugvalue & 0x10;
 			m_IsDebug_Grasta = debugvalue & 0x20;
 			m_IsDebug_LOM = debugvalue & 0x40;
+
+			if (m_IsDebug) cout << "[m_IsDebug] " << m_IsDebug << endl;
+			if (m_IsDebug) cout << "[m_IsDebug_Path] " << m_IsDebug_Path << endl;
+			if (m_IsDebug) cout << "[m_IsDebug_Fighting] " << m_IsDebug_Fighting << endl;
+			if (m_IsDebug) cout << "[m_IsDebug_Grinding] " << m_IsDebug_Grinding << endl;
+			if (m_IsDebug) cout << "[m_IsDebug_Fishing] " << m_IsDebug_Fishing << endl;
+			if (m_IsDebug) cout << "[m_IsDebug_Grasta] " << m_IsDebug_Grasta << endl;
+			if (m_IsDebug) cout << "[m_IsDebug_LOM] " << m_IsDebug_LOM << endl;
 		}
 		else if (key.compare("Print Image") == 0)
 		{
@@ -2550,6 +2557,10 @@ void loadSettingConfig()
 		else if (key.compare("Timeout") == 0)
 		{
 			m_Fight_Timeout = stoi(value);
+		}
+		else if (key.compare("Action Interval") == 0)
+		{
+			m_Fight_ActionInterval = stoi(value);
 		}
 		else if (key.compare("SkillsHorrorSet") == 0)
 		{
@@ -2889,30 +2900,30 @@ void setup()
 		}
 	}
 
-	cout << "RunState " << runState << endl;
-
 	ocr = OCRTesseract::create(NULL, NULL, NULL, OEM_TESSERACT_ONLY, PSM_SINGLE_LINE);
 
 	string innerWindowName;
-	//if (emulator.compare("LD") == 0)
-	//{
-	emulator = "dnplayer.exe";
-	innerWindowName = "TheRender";
-	//}
-	//else
-	//{
-		//emulator = "Nox.exe";
-		//innerWindowName = "ScreenBoardClassWindow";
-	//}
+	if (emulator.compare("LD") == 0)
+	{
+		emulator = "dnplayer.exe";
+		innerWindowName = "TheRender";
+	}
+	else
+	{
+		emulator = "Nox.exe";
+		innerWindowName = "ScreenBoardClassWindow";
+	}
 
 	pair<string*, string*> enumInput = make_pair(&emulator, &windowName);
-	EnumWindows(EnumWindowsProc, LPARAM(&enumInput));
-	EnumChildWindows(window, EnumChildWindowsProc, LPARAM(&innerWindowName));
+	BOOL res1 = EnumWindows(EnumWindowsProc, LPARAM(&enumInput));
+	BOOL res2 = EnumChildWindows(windowTopLevel, EnumChildWindowsProc, LPARAM(&windowName));
+	BOOL res3 = EnumChildWindows(window, EnumChildWindowsProc, LPARAM(&innerWindowName));
 
 	RECT rect;
 	GetWindowRect(window, &rect);
 	height = rect.bottom - rect.top;
 	width = rect.right - rect.left;
+
 	xCenter = width / 2;
 	yCenter = height / 2;
 	heightPct = height / 981.0;
@@ -3451,25 +3462,29 @@ void stateSilverHitBell(botState silverHitBellstate)
 	{
 		int i = 0;
 
-		SendMessage(window, WM_LBUTTONDOWN, 0, MAKELPARAM(xCenter, yCenter));
+		SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+		SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xCenter, yCenter));
 		sleepR(1);
 		SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xCenter, yCenter));
 		Sleep(3000);
 
-		SendMessage(window, WM_LBUTTONDOWN, 0, MAKELPARAM(xCenter, yCenter));
+		SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+		SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xCenter, yCenter));
 		sleepR(1);
 		SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xCenter, yCenter));
 
 		Sleep(1200);
 
-		SendMessage(window, WM_LBUTTONDOWN, 0, MAKELPARAM(xCenter, yCenter));
+		SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+		SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xCenter, yCenter));
 		sleepR(1);
 		SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xCenter, yCenter));
 		i++;
 
 		Sleep(1350);
 
-		SendMessage(window, WM_LBUTTONDOWN, 0, MAKELPARAM(xCenter, yCenter));
+		SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+		SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xCenter, yCenter));
 		sleepR(1);
 		SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xCenter, yCenter));
 		i++;
@@ -3477,7 +3492,8 @@ void stateSilverHitBell(botState silverHitBellstate)
 		for (; i < 4;) {
 			Sleep(1350);
 
-			SendMessage(window, WM_LBUTTONDOWN, 0, MAKELPARAM(xCenter, yCenter));
+			SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+			SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xCenter, yCenter));
 			sleepR(1);
 			SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xCenter, yCenter));
 			i++;
@@ -3506,7 +3522,8 @@ void stateSilverHitBell(botState silverHitBellstate)
 			{
 				int tosleep = 1;
 				Sleep(tosleep);
-				SendMessage(window, WM_LBUTTONDOWN, 0, MAKELPARAM(xCenter, yCenter));
+				SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+				SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xCenter, yCenter));
 				sleepR(1);
 				SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xCenter, yCenter));
 				j = 800;
@@ -3551,7 +3568,8 @@ void stateJumpRopeRatle()
 
 	bool check = false;
 
-	SendMessage(window, WM_LBUTTONDOWN, 0, MAKELPARAM(xCenter, yCenter));
+	SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+	SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xCenter, yCenter));
 	sleepR(1);
 	SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xCenter, yCenter));
 
@@ -3572,7 +3590,8 @@ void stateJumpRopeRatle()
 			{
 				check = false;
 
-				SendMessage(window, WM_LBUTTONDOWN, 0, MAKELPARAM(xCenter, yCenter));
+				SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+				SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xCenter, yCenter));
 				sleepR(1);
 				SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xCenter, yCenter));
 				if (q++ == 10001)
@@ -3602,7 +3621,8 @@ void stateJumpRopeBaruoki()
 
 	bool check = true;
 
-	SendMessage(window, WM_LBUTTONDOWN, 0, MAKELPARAM(xCenter, yCenter));
+	SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+	SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xCenter, yCenter));
 	sleepR(1);
 	SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xCenter, yCenter));
 
@@ -3623,7 +3643,8 @@ void stateJumpRopeBaruoki()
 			{
 				check = false;
 
-				SendMessage(window, WM_LBUTTONDOWN, 0, MAKELPARAM(xCenter, yCenter));
+				SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+				SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xCenter, yCenter));
 				sleepR(1);
 				SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xCenter, yCenter));
 				if (q++ == 10001)
@@ -3951,7 +3972,7 @@ int main()
 	setup();
 	loadSettingConfig();
 
-	cout << "runState is " << runState << endl;
+	if (m_IsDebug) cout << "runState is " << runState << endl;
 
 	switch (runState) {
 	case baruokiJumpRope:
