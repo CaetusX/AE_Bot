@@ -8,11 +8,11 @@ This is a bot for Another Eden. It has several running modes
 6) Screen capture mode: It can capture the screen
 
 # How to run it
-It runs with emulator. I only tried LD Player.
+It runs with emulator. Both Nox player and LD Player is suppported.
 
 Finish the story up to 2.2 so that all the areas are open.
 
-I suggest to set LD Player at least 1280 x 720. Because I use OpenCV to catch the image for comparison, any resolution lower than 1280 x 720 might not make the bot work.
+I suggest to set emulator at least 1280 x 720. Because I use OpenCV to catch the image for comparison, any resolution lower than 1280 x 720 might not make the bot work.
 
 # How to start it
 First, open up the config_setup.txt file and read through it. This is the main config file to set the running mode. 
@@ -27,4 +27,4 @@ Once that's done, start your emulator. The emulator itself needs to be set to at
 
 Now start your game and get to the normal state where you're free to run around. The menu should not be open. Make sure the emulator is not minimized. The other thing to remember is you cannot minimize the emulator. Why? When minimized, the window no longer renders, so the bot is unable to take screenshots. So don't minimize, just put it behind another window. You also cannot resize the window after starting the bot. There are certain calculations done at the start of the bot to account for screen size that are never done again. If you need to resize the window, you need to restart the bot afterwards.
 
-Based on the different modes you want to use, you can start the bot at the respective place. Please read config_setup.txt for different starting point of the bot for different modes
+Based on the different modes you want to use, you can start the bot at the respective place. Idealy you should start the bot in a Commander with admin rights. Please read config_setup.txt for different starting point of the bot for different modes
