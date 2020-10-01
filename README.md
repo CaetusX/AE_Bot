@@ -1,5 +1,7 @@
 # AE_Bot
 
+<a href="https://github.com/CaetusX/AE_Bot/releases/download/13.0/AE_Bot.zip">Please download the bot here</a>
+
 This is a bot for Another Eden. It has several running modes
 1) Fishing mode: It completely automates the entire fishing process, including returning to the fish vendor, traveling to different fishing spots and fighting fishing horrors
 2) Grinding mode: It completely automates the grinding in the overworld, including returning to the spacetime rift to restore, traveling to different grinding locations and using skills to kill mobs / horrors
