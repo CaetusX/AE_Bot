@@ -29,17 +29,20 @@ enum grastaType { grasta_Attack, grasta_Life, grasta_Support, grasta_Special};
 int m_grastaType;
 vector<string> m_grastaNames;
 
-HWND windowTopLevel;
-HWND window;
+HWND m_windowTopLevel;
+HWND m_window;
 
 int M_WIDTH = (int) 1745.0;
 int M_HEIGHT = (int) 981.0;
 int M_WIDTH_1280 = (int) 1280.0;
 int M_HEIGHT_720 = (int) 720.0;
 
-int height, width;
-int msdThreshold = 10000;
-int loadTime = 3000;
+int m_height, m_width;
+double m_heightPct, m_widthPct;
+WORD m_xCenter, m_yCenter;
+
+int m_msdThreshold = 10000;
+int m_loadTime = 3000;
 bool m_IsDebug = false;
 bool m_IsDebug_Path = false; 
 bool m_IsDebug_Fighting = false;
@@ -47,11 +50,10 @@ bool m_IsDebug_Grinding = false;
 bool m_IsDebug_Fishing = false;
 bool m_IsDebug_Grasta = false;
 bool m_IsDebug_LOM = false;
+bool m_IsDebug_Platform = false;
 
 bool m_IsPrint = false;
 
-double heightPct, widthPct;
-WORD xCenter, yCenter;
 Ptr<OCRTesseract> ocr;
 HDC hdc;
 HDC hDest;
@@ -101,10 +103,10 @@ vector<pair<int, int>> m_Button_Characters = { { 135, 886 }, { 370, 886 }, { 605
 vector<pair<int, int>> m_Button_Skills = { { 195, 749 }, { 530, 749 }, { 865, 749 }, { 1200, 749 }, { 1400, 749 } };
 
 int m_Skill_Normal = 0;
-int m_Skill_Exchange = 4;
-int m_Skill_Exchange_A = 4;
-int m_Skill_Exchange_B = 5;
-int m_Skill_AF = 6;
+int m_Skill_Exchange = 5;
+int m_Skill_Exchange_A = 5;
+int m_Skill_Exchange_B = 6;
+int m_Skill_AF = 7;
 int m_Skill_for_AF = 3;
 int m_CharacterFrontline = 4;
 
@@ -243,7 +245,7 @@ BOOL CALLBACK EnumWindowsProc(_In_ HWND hwnd, _In_ LPARAM lParam)
 
 			if (windowTitle.compare((*((pair<string*, string*>*)(lParam))->second)) == 0)
 			{
-				window = hwnd;
+				m_window = hwnd;
 				return false;
 			}
 		}
@@ -260,7 +262,7 @@ BOOL CALLBACK EnumChildWindowsProc(_In_ HWND hwnd, _In_ LPARAM lParam)
 
 	if (windowTitle.compare((*((string*)(lParam)))) == 0)
 	{
-		window = hwnd;
+		m_window = hwnd;
 		return false;
 	}
 
@@ -284,15 +286,15 @@ void rSlideSleep(int time)
 
 void bitBltWholeScreen()
 {
-	BitBlt(hDest, 0, 0, width, height, hdc, 0, 0, SRCCOPY);
+	BitBlt(hDest, 0, 0, m_width, m_height, hdc, 0, 0, SRCCOPY);
 }
 
 void copyPartialPic(Mat& partialPic, int cols, int rows, int x, int y)
 {
-	x = (int) round(x * widthPct);
-	y = (int) round(y * heightPct);
-	cols = (int) round(cols * widthPct);
-	rows = (int) round(rows * heightPct);
+	x = (int) round(x * m_widthPct);
+	y = (int) round(y * m_heightPct);
+	cols = (int) round(cols * m_widthPct);
+	rows = (int) round(rows * m_heightPct);
 	bitbltPic(cv::Rect(x, y, cols, rows)).copyTo(partialPic);
 }
 
@@ -354,17 +356,19 @@ void leftClick(int x, int y, int sTime = 2000, bool changeLoc = true)
 {
 	if (changeLoc)
 	{
-		x = (int) round(x * widthPct);
-		y = (int) round(y * heightPct);
+		x = (int) round(x * m_widthPct);
+		y = (int) round(y * m_heightPct);
 	}
 
 	int randX = (boolRand(dev) ? lClickPixelRand(rng) : ((-1) * lClickPixelRand(rng)));
 	int randY = (boolRand(dev) ? lClickPixelRand(rng) : ((-1) * lClickPixelRand(rng)));
 
-	SendMessage(window, WM_MOUSEACTIVATE, (WPARAM) windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
-	SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(x + randX, y + randY));
+	if (m_IsDebug_Platform) cout << "LeftClick " << x << " " << y << endl;
+
+	SendMessage(m_window, WM_MOUSEACTIVATE, (WPARAM) m_windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+	SendMessage(m_window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(x + randX, y + randY));
 	sleepR(10);
-	SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(x + randX, y + randY));
+	SendMessage(m_window, WM_LBUTTONUP, 0, MAKELPARAM(x + randX, y + randY));
 
 	if (sTime <= 100)
 		Sleep(sTime + shortSleepRand(rng));
@@ -404,38 +408,38 @@ pair<int, int> findExclamationIcon(exclType whichExcl = exclDefault)
 	switch (whichExcl) {
 	case exclRift:
 		exclIcon = findIcon(exclRiftIcon);
-		exclIcon.first += (int)round(50 * widthPct);
-		exclIcon.second += (int)round(70 * heightPct);
+		exclIcon.first += (int)round(50 * m_widthPct);
+		exclIcon.second += (int)round(70 * m_heightPct);
 		break;
 	case exclSepcter:
 		exclIcon = findIcon(exclSepcterIcon);
-		exclIcon.first += (int)round(70 * widthPct);
-		exclIcon.second += (int)round(95 * heightPct);
+		exclIcon.first += (int)round(70 * m_widthPct);
+		exclIcon.second += (int)round(95 * m_heightPct);
 		break;
 	case exclGrasta:
 		exclIcon = findIcon(exclGrastaIcon);
-		exclIcon.first += (int)round(50 * widthPct);
-		exclIcon.second += (int)round(70 * heightPct);
+		exclIcon.first += (int)round(50 * m_widthPct);
+		exclIcon.second += (int)round(70 * m_heightPct);
 		break;
 	case exclChamber:
 		exclIcon = findIcon(exclChamberIcon);
-		exclIcon.first += (int)round(30 * widthPct);
-		exclIcon.second += (int)round(50 * heightPct);
+		exclIcon.first += (int)round(30 * m_widthPct);
+		exclIcon.second += (int)round(50 * m_heightPct);
 		break;
 	case exclChamberPlasma:
 		exclIcon = findIcon(exclChamberPlasmaIcon);
-		exclIcon.first += (int)round(30 * widthPct);
-		exclIcon.second += (int)round(50 * heightPct);
+		exclIcon.first += (int)round(30 * m_widthPct);
+		exclIcon.second += (int)round(50 * m_heightPct);
 		break;
 	case exclKMS:
 		exclIcon = findIcon(exclKMSIcon);
-		exclIcon.first += (int)round(17 * widthPct);
-		exclIcon.second += (int)round(40 * heightPct);
+		exclIcon.first += (int)round(17 * m_widthPct);
+		exclIcon.second += (int)round(40 * m_heightPct);
 		break;
 	default:
 		exclIcon = findIcon(exclamationIcon);
-		exclIcon.first += (int)round(11 * widthPct);
-		exclIcon.second += (int)round(25 * heightPct);
+		exclIcon.first += (int)round(11 * m_widthPct);
+		exclIcon.second += (int)round(25 * m_heightPct);
 		break;
 	}
 
@@ -445,16 +449,16 @@ pair<int, int> findExclamationIcon(exclType whichExcl = exclDefault)
 void findAndClickSwampFishIcon()
 {
 	pair<int, int> fishIconLoc = findIcon(swampFishIcon);
-	fishIconLoc.first += (int) round(36 * widthPct);
-	fishIconLoc.second += (int) round(19 * heightPct);
+	fishIconLoc.first += (int) round(36 * m_widthPct);
+	fishIconLoc.second += (int) round(19 * m_heightPct);
 	leftClick(fishIconLoc.first, fishIconLoc.second, 2000, false);
 }
 
 void findAndClickFishIcon()
 {
 	pair<int, int> fishIconLoc = findIcon(fishIcon);
-	fishIconLoc.first += (int) round(30 * widthPct);
-	fishIconLoc.second += (int) round(15 * heightPct);
+	fishIconLoc.first += (int) round(30 * m_widthPct);
+	fishIconLoc.second += (int) round(15 * m_heightPct);
 	leftClick(fishIconLoc.first, fishIconLoc.second, 2000, false);
 }
 
@@ -465,19 +469,19 @@ pair<int, int> findDoorIcon(doorType whichDoor)
 	switch (whichDoor) {
 	case doorKunlun:
 		doorIconLoc = findIcon(doorKunlunIcon);
-		doorIconLoc.first += (int)round(40 * widthPct);
-		doorIconLoc.second += (int)round(40 * heightPct);
+		doorIconLoc.first += (int)round(40 * m_widthPct);
+		doorIconLoc.second += (int)round(40 * m_heightPct);
 		break;
 	case doorLOM:
 		doorIconLoc = findIcon(doorLOMIcon);
-		doorIconLoc.first += (int)round(50 * widthPct);
-		doorIconLoc.second += (int)round(50 * heightPct);
+		doorIconLoc.first += (int)round(50 * m_widthPct);
+		doorIconLoc.second += (int)round(50 * m_heightPct);
 		break;
 	case doorDefault:
 	default:
 		doorIconLoc = findIcon(doorDefaultIcon);
-		doorIconLoc.first += (int)round(60 * widthPct);
-		doorIconLoc.second += (int)round(60 * heightPct);
+		doorIconLoc.first += (int)round(60 * m_widthPct);
+		doorIconLoc.second += (int)round(60 * m_heightPct);
 		break;
 	}
 
@@ -491,19 +495,19 @@ pair<int, int> findStairIcon(stairType whichStair)
 	switch (whichStair) {
 	case stairDown:
 		stairIconLoc = findIcon(stairDownIcon);
-		stairIconLoc.first += (int)round(60 * widthPct);
-		stairIconLoc.second += (int)round(60 * heightPct);
+		stairIconLoc.first += (int)round(60 * m_widthPct);
+		stairIconLoc.second += (int)round(60 * m_heightPct);
 		break;
 	case stairLOM:
 		stairIconLoc = findIcon(stairLOMIcon);
-		stairIconLoc.first += (int)round(40 * widthPct);
-		stairIconLoc.second += (int)round(40 * heightPct);
+		stairIconLoc.first += (int)round(40 * m_widthPct);
+		stairIconLoc.second += (int)round(40 * m_heightPct);
 		break;
 	case stairDefault:
 	default:
 		stairIconLoc = findIcon(stairDefaultIcon);
-		stairIconLoc.first += (int)round(60 * widthPct);
-		stairIconLoc.second += (int)round(60 * heightPct);
+		stairIconLoc.first += (int)round(60 * m_widthPct);
+		stairIconLoc.second += (int)round(60 * m_heightPct);
 		break;
 	}
 
@@ -512,21 +516,23 @@ pair<int, int> findStairIcon(stairType whichStair)
 
 void drag(directionInfo botDirection, int slideDistance, int xStart, int yStart)
 {
-	xStart = (int) round(xStart * widthPct);
-	yStart = (int) round(yStart * heightPct);
+	xStart = (int) round(xStart * m_widthPct);
+	yStart = (int) round(yStart * m_heightPct);
 	int delta = 0;
 	int deviation = 3;
+
+	if (m_IsDebug_Platform) cout << "Drag " << botDirection << " " << slideDistance << " from " << xStart << " " << yStart << endl;
 
 	switch (botDirection)
 	{
 	case RIGHT:
-		deviation = (int) round(deviation * heightPct);
-		slideDistance = (int) round(slideDistance * widthPct);
+		deviation = (int) round(deviation * m_heightPct);
+		slideDistance = (int) round(slideDistance * m_widthPct);
 		xStart = (boolRand(rng) ? xStart + slideLClick(rng) : xStart - slideLClick(rng));
 		yStart = (boolRand(rng) ? yStart + slideLClick(rng) : yStart - slideLClick(rng));
 
-		SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
-		SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xStart, yStart));
+		SendMessage(m_window, WM_MOUSEACTIVATE, (WPARAM)m_windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+		SendMessage(m_window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xStart, yStart));
 		sleepR(10);
 
 		for (int i = 0; i < slideDistance; ++i)
@@ -536,20 +542,20 @@ void drag(directionInfo botDirection, int slideDistance, int xStart, int yStart)
 			else if (delta > -deviation)
 				delta -= boolRand(rng);
 
-			SendMessage(window, WM_MOUSEMOVE, MK_LBUTTON, MAKELPARAM(xStart - i, yStart + delta));
+			SendMessage(m_window, WM_MOUSEMOVE, MK_LBUTTON, MAKELPARAM(xStart - i, yStart + delta));
 			rSlideSleep(2);
 		}
 
-		SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xStart - (slideDistance - 1), yStart + delta));
+		SendMessage(m_window, WM_LBUTTONUP, 0, MAKELPARAM(xStart - (slideDistance - 1), yStart + delta));
 		break;
 	case LEFT:
-		deviation = (int) round(deviation * heightPct);
-		slideDistance = (int) round(slideDistance * widthPct);
+		deviation = (int) round(deviation * m_heightPct);
+		slideDistance = (int) round(slideDistance * m_widthPct);
 		xStart = (boolRand(rng) ? xStart + slideLClick(rng) : xStart - slideLClick(rng));
 		yStart = (boolRand(rng) ? yStart + slideLClick(rng) : yStart - slideLClick(rng));
 
-		SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
-		SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xStart, yStart));
+		SendMessage(m_window, WM_MOUSEACTIVATE, (WPARAM)m_windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+		SendMessage(m_window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xStart, yStart));
 		sleepR(10);
 
 		for (int i = 0; i < slideDistance; ++i)
@@ -559,20 +565,20 @@ void drag(directionInfo botDirection, int slideDistance, int xStart, int yStart)
 			else if (delta > -deviation)
 				delta -= boolRand(rng);
 
-			SendMessage(window, WM_MOUSEMOVE, MK_LBUTTON, MAKELPARAM(xStart + i, yStart + delta));
+			SendMessage(m_window, WM_MOUSEMOVE, MK_LBUTTON, MAKELPARAM(xStart + i, yStart + delta));
 			rSlideSleep(2);
 		}
 
-		SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xStart + (slideDistance - 1), yStart + delta));
+		SendMessage(m_window, WM_LBUTTONUP, 0, MAKELPARAM(xStart + (slideDistance - 1), yStart + delta));
 		break;
 	case UP:
-		deviation = (int) round(deviation * widthPct);
-		slideDistance = (int) round(slideDistance * heightPct);
+		deviation = (int) round(deviation * m_widthPct);
+		slideDistance = (int) round(slideDistance * m_heightPct);
 		xStart = (boolRand(rng) ? xStart + slideLClick(rng) : xStart - slideLClick(rng));
 		yStart = (boolRand(rng) ? yStart + slideLClick(rng) : yStart - slideLClick(rng));
 
-		SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
-		SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xStart, yStart));
+		SendMessage(m_window, WM_MOUSEACTIVATE, (WPARAM)m_windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+		SendMessage(m_window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xStart, yStart));
 		sleepR(10);
 
 		for (int i = 0; i < slideDistance; ++i)
@@ -582,20 +588,20 @@ void drag(directionInfo botDirection, int slideDistance, int xStart, int yStart)
 			else if (delta > -deviation)
 				delta -= boolRand(rng);
 
-			SendMessage(window, WM_MOUSEMOVE, MK_LBUTTON, MAKELPARAM(xStart + delta, yStart + i));
+			SendMessage(m_window, WM_MOUSEMOVE, MK_LBUTTON, MAKELPARAM(xStart + delta, yStart + i));
 			rSlideSleep(2);
 		}
 
-		SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xStart + delta, yStart + (slideDistance - 1)));
+		SendMessage(m_window, WM_LBUTTONUP, 0, MAKELPARAM(xStart + delta, yStart + (slideDistance - 1)));
 		break;
 	case DOWN:
-		deviation = (int) round(deviation * widthPct);
-		slideDistance = (int) round(slideDistance * heightPct);
+		deviation = (int) round(deviation * m_widthPct);
+		slideDistance = (int) round(slideDistance * m_heightPct);
 		xStart = (boolRand(rng) ? xStart + slideLClick(rng) : xStart - slideLClick(rng));
 		yStart = (boolRand(rng) ? yStart + slideLClick(rng) : yStart - slideLClick(rng));
 
-		SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
-		SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xStart, yStart));
+		SendMessage(m_window, WM_MOUSEACTIVATE, (WPARAM)m_windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+		SendMessage(m_window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xStart, yStart));
 		sleepR(10);
 
 		for (int i = 0; i < slideDistance; ++i)
@@ -605,11 +611,11 @@ void drag(directionInfo botDirection, int slideDistance, int xStart, int yStart)
 			else if (delta > -deviation)
 				delta -= boolRand(rng);
 
-			SendMessage(window, WM_MOUSEMOVE, MK_LBUTTON, MAKELPARAM(xStart + delta, yStart - i));
+			SendMessage(m_window, WM_MOUSEMOVE, MK_LBUTTON, MAKELPARAM(xStart + delta, yStart - i));
 			rSlideSleep(2);
 		}
 
-		SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xStart + delta, yStart - (slideDistance - 1)));
+		SendMessage(m_window, WM_LBUTTONUP, 0, MAKELPARAM(xStart + delta, yStart - (slideDistance - 1)));
 		break;
 	}
 
@@ -640,20 +646,22 @@ void Walk(directionInfo botDirection, int time, int sleepTime = 3000)
 	int delta = 0;
 	int slideDistance;
 	int deviation = 3;
-	int xStart = (boolRand(rng) ? (xCenter + slideLClick(rng)) : (xCenter - slideLClick(rng)));
-	int yStart = (boolRand(rng) ? (yCenter + slideLClick(rng)) : (yCenter - slideLClick(rng)));
+	int xStart = (boolRand(rng) ? (m_xCenter + slideLClick(rng)) : (m_xCenter - slideLClick(rng)));
+	int yStart = (boolRand(rng) ? (m_yCenter + slideLClick(rng)) : (m_yCenter - slideLClick(rng)));
+
+	if (m_IsDebug_Platform) cout << "Walk " << botDirection << " " << time << endl;
 
 	//Start walking left
-	SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
-	SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xStart, yStart));
+	SendMessage(m_window, WM_MOUSEACTIVATE, (WPARAM)m_windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+	SendMessage(m_window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xStart, yStart));
 	Sleep(10);
 
 	switch (botDirection)
 	{
 	case LEFT:
-		deviation = (int) round(deviation * heightPct);
+		deviation = (int) round(deviation * m_heightPct);
 		slideDistance = (boolRand(rng) ? slideDistanceRand(rng) : (-1) * slideDistanceRand(rng)) + 300;
-		slideDistance = (int) round(slideDistance * widthPct);
+		slideDistance = (int) round(slideDistance * m_widthPct);
 		for (int i = 0; i < slideDistance; ++i)
 		{
 			if (boolRand(rng) && delta < 3)
@@ -661,18 +669,18 @@ void Walk(directionInfo botDirection, int time, int sleepTime = 3000)
 			else if (delta > -3)
 				delta -= boolRand(rng);
 
-			SendMessage(window, WM_MOUSEMOVE, MK_LBUTTON, MAKELPARAM(xStart - i, yStart + delta));
+			SendMessage(m_window, WM_MOUSEMOVE, MK_LBUTTON, MAKELPARAM(xStart - i, yStart + delta));
 			Sleep(1);
 		}
 
 		Sleep(time);
-		SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xStart - (slideDistance - 1), yStart + delta));
+		SendMessage(m_window, WM_LBUTTONUP, 0, MAKELPARAM(xStart - (slideDistance - 1), yStart + delta));
 		break;
 
 	case RIGHT:
-		deviation = (int) round(deviation * heightPct);
+		deviation = (int) round(deviation * m_heightPct);
 		slideDistance = (boolRand(rng) ? slideDistanceRand(rng) : (-1) * slideDistanceRand(rng)) + 300;
-		slideDistance = (int) round(slideDistance * widthPct);
+		slideDistance = (int) round(slideDistance * m_widthPct);
 		for (int i = 0; i < slideDistance; ++i)
 		{
 			if (boolRand(rng) && delta < 3)
@@ -680,18 +688,18 @@ void Walk(directionInfo botDirection, int time, int sleepTime = 3000)
 			else if (delta > -3)
 				delta -= boolRand(rng);
 
-			SendMessage(window, WM_MOUSEMOVE, MK_LBUTTON, MAKELPARAM(xStart + i, yStart + delta));
+			SendMessage(m_window, WM_MOUSEMOVE, MK_LBUTTON, MAKELPARAM(xStart + i, yStart + delta));
 			Sleep(1);
 		}
 
 		Sleep(time);
-		SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xStart + (slideDistance - 1), yStart + delta));
+		SendMessage(m_window, WM_LBUTTONUP, 0, MAKELPARAM(xStart + (slideDistance - 1), yStart + delta));
 		break;
 
 	case DOWN:
-		deviation = (int) round(deviation * widthPct);
+		deviation = (int) round(deviation * m_widthPct);
 		slideDistance = (boolRand(rng) ? slideDistanceRand(rng) : (-1) * slideDistanceRand(rng)) + 300;
-		slideDistance = (int) round(slideDistance * heightPct);
+		slideDistance = (int) round(slideDistance * m_heightPct);
 		for (int i = 0; i < slideDistance; ++i)
 		{
 			if (boolRand(rng) && delta < 3)
@@ -699,18 +707,18 @@ void Walk(directionInfo botDirection, int time, int sleepTime = 3000)
 			else if (delta > -3)
 				delta -= boolRand(rng);
 
-			SendMessage(window, WM_MOUSEMOVE, MK_LBUTTON, MAKELPARAM(xStart + delta, yStart + i));
+			SendMessage(m_window, WM_MOUSEMOVE, MK_LBUTTON, MAKELPARAM(xStart + delta, yStart + i));
 			Sleep(1);
 		}
 
 		Sleep(time);
-		SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xStart + delta, yStart + (slideDistance - 1)));
+		SendMessage(m_window, WM_LBUTTONUP, 0, MAKELPARAM(xStart + delta, yStart + (slideDistance - 1)));
 		break;
 
 	case UP:
-		deviation = (int) round(deviation * widthPct);
+		deviation = (int) round(deviation * m_widthPct);
 		slideDistance = (boolRand(rng) ? slideDistanceRand(rng) : (-1) * slideDistanceRand(rng)) + 300;
-		slideDistance = (int) round(slideDistance * heightPct);
+		slideDistance = (int) round(slideDistance * m_heightPct);
 		for (int i = 0; i < slideDistance; ++i)
 		{
 			if (boolRand(rng) && delta < 3)
@@ -718,12 +726,12 @@ void Walk(directionInfo botDirection, int time, int sleepTime = 3000)
 			else if (delta > -3)
 				delta -= boolRand(rng);
 
-			SendMessage(window, WM_MOUSEMOVE, MK_LBUTTON, MAKELPARAM(xStart + delta, yStart - i));
+			SendMessage(m_window, WM_MOUSEMOVE, MK_LBUTTON, MAKELPARAM(xStart + delta, yStart - i));
 			Sleep(1);
 		}
 
 		Sleep(time);
-		SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xStart + delta, yStart - (slideDistance - 1)));
+		SendMessage(m_window, WM_LBUTTONUP, 0, MAKELPARAM(xStart + delta, yStart - (slideDistance - 1)));
 		break;
 
 	}
@@ -1002,7 +1010,7 @@ int engageHorrorFightNow(bool restoreHPMP=true)
 
 	if (!inBattle()) // not horror
 	{
-		leftClick(xCenter, yCenter, 3000);
+		leftClick(m_xCenter, m_yCenter, 3000);
 		return status_NotFight;
 	}
 
@@ -1168,28 +1176,6 @@ int engageHorrorFightNow(bool restoreHPMP=true)
 
 	if (m_IsPrint) captureScreenNow("Result");
 
-	/*
-	bitBltWholeScreen();
-	copyPartialPic(partialPic, 770, 90, 490, 420);
-	copyPartialPic(imagePicCrop, M_WIDTH, M_HEIGHT, 0, 0);
-	textToCheck = getText(partialPic);
-
-	if (textToCheck.find("Stones") != string::npos) // battle failed
-	{
-		leftClick(690, 740); // Click Quit
-
-		bitBltWholeScreen();
-		copyPartialPic(partialPic, 1000, 160, 380, 360);
-		textToCheck = getText(partialPic);
-
-		if (textToCheck.find("location") != string::npos)
-		{
-			leftClick(1080, 600); // Click Quit
-			sleepR(7000);
-			return 1; // failed
-		}
-	}
-	*/
 	longSleepR(4000);
 
 	clickAttack(); //Get past the results screen
@@ -1212,7 +1198,7 @@ int engageHorrorFightNow(bool restoreHPMP=true)
 }
 
 //Strategy is to quadrisect the lake and toss into each of the four sections and center
-void fish(vector<pair<int, int>>& sections, int msdThreshold = 10000, int horrorThreshold = 7000)
+void fish(vector<pair<int, int>>& sections, int m_msdThreshold = 10000, int horrorThreshold = 7000)
 {
 	double catchIndex = 0, horrorIndex = 0, monsterIndex = 0;
 	struct tm timeinfo;
@@ -1247,10 +1233,10 @@ void fish(vector<pair<int, int>>& sections, int msdThreshold = 10000, int horror
 
 		if (slotNum > 4)
 		{
-			drag(DOWN, 74, xCenter, yCenter);
+			drag(DOWN, 74, m_xCenter, m_yCenter);
 			for (int i = 5; i < slotNum; ++i)
 			{
-				drag(DOWN, 100, xCenter, yCenter);
+				drag(DOWN, 100, m_xCenter, m_yCenter);
 			}
 
 			leftClick(baits[5].first, baits[5].second);
@@ -1346,7 +1332,7 @@ void fish(vector<pair<int, int>>& sections, int msdThreshold = 10000, int horror
 				MSD = cv::norm(lakeImg, bitbltPic);
 				MSD = MSD * MSD / lakeImg.total();
 
-				if (MSD > msdThreshold) //If the current screen is sufficiently different (high mean square difference) from the normal lake image, then a zoom in has occurred
+				if (MSD > m_msdThreshold) //If the current screen is sufficiently different (high mean square difference) from the normal lake image, then a zoom in has occurred
 				{
 					Sleep(100 + sleepRand(rng)); //Emulate human reaction time
 					leftClick(sections[j].first, sections[j].second);
@@ -1361,7 +1347,7 @@ void fish(vector<pair<int, int>>& sections, int msdThreshold = 10000, int horror
 					bitBltWholeScreen();
 					MSD = cv::norm(lakeImg, bitbltPic);
 					MSD = MSD * MSD / lakeImg.total();
-					if (MSD > msdThreshold) //Double, gotta click past it
+					if (MSD > m_msdThreshold) //Double, gotta click past it
 					{
 						leftClick(sections[j].first, sections[j].second);
 						longSleepR(2000);
@@ -1369,7 +1355,7 @@ void fish(vector<pair<int, int>>& sections, int msdThreshold = 10000, int horror
 						bitBltWholeScreen();
 						MSD = cv::norm(lakeImg, bitbltPic);
 						MSD = MSD * MSD / lakeImg.total();
-						if (MSD > msdThreshold) //Triple
+						if (MSD > m_msdThreshold) //Triple
 						{
 							leftClick(sections[j].first, sections[j].second);
 							longSleepR(2000);
@@ -1380,7 +1366,7 @@ void fish(vector<pair<int, int>>& sections, int msdThreshold = 10000, int horror
 					bitBltWholeScreen();
 					MSD = cv::norm(lakeImg, bitbltPic);
 					MSD = MSD * MSD / lakeImg.total();
-					if (MSD > msdThreshold) //Should have returned to normal lake image; if not, its a battle
+					if (MSD > m_msdThreshold) //Should have returned to normal lake image; if not, its a battle
 					{
 						Sleep(5000); //Give ample time for battle to fully load
 
@@ -1602,7 +1588,7 @@ int goToTargetLocation(vector<pathInfo> pathInfoList)
 
 			if (curValue1.compare("LoadTime") == 0)
 			{
-				longSleepR(loadTime);
+				longSleepR(m_loadTime);
 			}
 			else
 			{
@@ -1727,8 +1713,8 @@ int goToTargetLocation(vector<pathInfo> pathInfoList)
 					if (curValue1.compare(m_DynamicImage[k].name) == 0)
 					{
 						pair<int, int> iconLoc = findIcon(m_DynamicImage[k].image);
-						iconLoc.first += (int)round(m_DynamicImage[k].width * widthPct);
-						iconLoc.second += (int)round(m_DynamicImage[k].width * heightPct);
+						iconLoc.first += (int)round(m_DynamicImage[k].width * m_widthPct);
+						iconLoc.second += (int)round(m_DynamicImage[k].height * m_heightPct);
 						leftClick(iconLoc.first, iconLoc.second, 2000, false);
 						break;
 					}
@@ -1787,7 +1773,7 @@ void goToSpacetimeRift(bool heal = true)
 	leftClick(m_Button_SpacetimeRift);
 	leftClick(m_Button_SpacetimeRift);
 	leftClick(m_Button_Yes);
-	longSleepR(loadTime);
+	longSleepR(m_loadTime);
 
 	if (heal)
 	{
@@ -2481,7 +2467,7 @@ void loadSettingConfig()
 
 		if (key.compare("Load Time") == 0)
 		{
-			loadTime = stoi(value);
+			m_loadTime = stoi(value);
 		}
 		else if (key.compare("Debug") == 0)
 		{
@@ -2494,6 +2480,7 @@ void loadSettingConfig()
 			m_IsDebug_Fishing = debugvalue & 0x10;
 			m_IsDebug_Grasta = debugvalue & 0x20;
 			m_IsDebug_LOM = debugvalue & 0x40;
+			m_IsDebug_Platform = debugvalue & 0x80;
 
 			if (m_IsDebug) cout << "[m_IsDebug] " << m_IsDebug << endl;
 			if (m_IsDebug) cout << "[m_IsDebug_Path] " << m_IsDebug_Path << endl;
@@ -2502,6 +2489,7 @@ void loadSettingConfig()
 			if (m_IsDebug) cout << "[m_IsDebug_Fishing] " << m_IsDebug_Fishing << endl;
 			if (m_IsDebug) cout << "[m_IsDebug_Grasta] " << m_IsDebug_Grasta << endl;
 			if (m_IsDebug) cout << "[m_IsDebug_LOM] " << m_IsDebug_LOM << endl;
+			if (m_IsDebug) cout << "[m_IsDebug_Platform] " << m_IsDebug_Platform << endl;
 		}
 		else if (key.compare("Print Image") == 0)
 		{
@@ -2747,7 +2735,7 @@ void loadSettingConfig()
 
 void setup()
 {
-	string emulator, windowName;
+	string emulator, windowName, innerWindowName;
 
 	GetCurrentDirectory(MAX_PATH, m_CurrentPath);
 
@@ -2815,7 +2803,7 @@ void setup()
 			ltrimString();
 			getKeyValue(str);
 			if (key.compare("Height") == 0)
-				dynamicimage.coordy = stoi(value);
+				dynamicimage.height = stoi(value);
 
 			std::getline(file, str);
 			ltrimString();
@@ -2846,6 +2834,14 @@ void setup()
 		if (key.compare("Window Name") == 0)
 		{
 			windowName = value;
+		}
+		if (key.compare("Emulator Name") == 0)
+		{
+			emulator = value;
+		}
+		if (key.compare("InnerWindow Name") == 0)
+		{
+			innerWindowName = value;
 		}
 		/*****************/
 		/* Mode section */
@@ -2902,32 +2898,20 @@ void setup()
 
 	ocr = OCRTesseract::create(NULL, NULL, NULL, OEM_TESSERACT_ONLY, PSM_SINGLE_LINE);
 
-	string innerWindowName;
-	if (emulator.compare("LD") == 0)
-	{
-		emulator = "dnplayer.exe";
-		innerWindowName = "TheRender";
-	}
-	else
-	{
-		emulator = "Nox.exe";
-		innerWindowName = "ScreenBoardClassWindow";
-	}
-
 	pair<string*, string*> enumInput = make_pair(&emulator, &windowName);
 	BOOL res1 = EnumWindows(EnumWindowsProc, LPARAM(&enumInput));
-	BOOL res2 = EnumChildWindows(windowTopLevel, EnumChildWindowsProc, LPARAM(&windowName));
-	BOOL res3 = EnumChildWindows(window, EnumChildWindowsProc, LPARAM(&innerWindowName));
+	BOOL res2 = EnumChildWindows(m_windowTopLevel, EnumChildWindowsProc, LPARAM(&windowName));
+	BOOL res3 = EnumChildWindows(m_window, EnumChildWindowsProc, LPARAM(&innerWindowName));
 
 	RECT rect;
-	GetWindowRect(window, &rect);
-	height = rect.bottom - rect.top;
-	width = rect.right - rect.left;
+	GetWindowRect(m_window, &rect);
+	m_height = rect.bottom - rect.top;
+	m_width = rect.right - rect.left;
 
-	xCenter = width / 2;
-	yCenter = height / 2;
-	heightPct = height / 981.0;
-	widthPct = width / 1745.0;
+	m_xCenter = m_width / 2;
+	m_yCenter = m_height / 2;
+	m_heightPct = m_height / (double) M_HEIGHT;
+	m_widthPct = m_width / (double) M_WIDTH;
 
 	fishIcon = imread("images\\fish.png", IMREAD_UNCHANGED);
 	exclamationIcon = imread("images\\exclamation.png", IMREAD_UNCHANGED);
@@ -2972,62 +2956,62 @@ void setup()
 	m_MonsterVec_LOMPSlime.push_back(imread("images\\monster_lompslime1.png", IMREAD_UNCHANGED));
 	m_MonsterVec_LOMPSlime.push_back(imread("images\\monster_lompslime2.png", IMREAD_UNCHANGED));
 
-	if (heightPct != 1.0 || widthPct != 1.0)
+	if (m_heightPct != 1.0 || m_widthPct != 1.0)
 	{
-		resize(fishIcon, fishIcon, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(exclamationIcon, exclamationIcon, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(exclRiftIcon, exclRiftIcon, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(exclSepcterIcon, exclSepcterIcon, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(exclGrastaIcon, exclGrastaIcon, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(exclChamberIcon, exclChamberIcon, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(exclChamberPlasmaIcon, exclChamberPlasmaIcon, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(exclKMSIcon, exclKMSIcon, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(swampFishIcon, swampFishIcon, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(doorDefaultIcon, doorDefaultIcon, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(doorKunlunIcon, doorKunlunIcon, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(doorLOMIcon, doorLOMIcon, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(stairDefaultIcon, stairDefaultIcon, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(stairDownIcon, stairDownIcon, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(stairLOMIcon, stairLOMIcon, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(fishIcon, fishIcon, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(exclamationIcon, exclamationIcon, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(exclRiftIcon, exclRiftIcon, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(exclSepcterIcon, exclSepcterIcon, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(exclGrastaIcon, exclGrastaIcon, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(exclChamberIcon, exclChamberIcon, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(exclChamberPlasmaIcon, exclChamberPlasmaIcon, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(exclKMSIcon, exclKMSIcon, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(swampFishIcon, swampFishIcon, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(doorDefaultIcon, doorDefaultIcon, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(doorKunlunIcon, doorKunlunIcon, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(doorLOMIcon, doorLOMIcon, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(stairDefaultIcon, stairDefaultIcon, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(stairDownIcon, stairDownIcon, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(stairLOMIcon, stairLOMIcon, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
 
-		resize(afBarEmptyPic, afBarEmptyPic, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(afBarFullPic, afBarFullPic, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(hitBellPic, hitBellPic, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(jmpRopePic1, jmpRopePic1, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(jmpRopePic2, jmpRopePic2, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(jmpRopePic3, jmpRopePic3, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(jmpRopePic4, jmpRopePic4, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(afBarEmptyPic, afBarEmptyPic, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(afBarFullPic, afBarFullPic, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(hitBellPic, hitBellPic, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(jmpRopePic1, jmpRopePic1, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(jmpRopePic2, jmpRopePic2, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(jmpRopePic3, jmpRopePic3, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(jmpRopePic4, jmpRopePic4, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
 
-		resize(m_MonsterVec_Baruoki[0], m_MonsterVec_Baruoki[0], Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(m_MonsterVec_Acteul[0], m_MonsterVec_Acteul[0], Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(m_MonsterVec_Vasu[0], m_MonsterVec_Vasu[0], Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(m_MonsterVec_Serena[0], m_MonsterVec_Serena[0], Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(m_MonsterVec_Rucyana[0], m_MonsterVec_Rucyana[0], Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(m_MonsterVec_Elzion[0], m_MonsterVec_Elzion[0], Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(m_MonsterVec_LastIsland[0], m_MonsterVec_LastIsland[0], Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(m_MonsterVec_DimensionRift[0], m_MonsterVec_DimensionRift[0], Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(m_MonsterVec_DimensionRift[1], m_MonsterVec_DimensionRift[1], Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(m_MonsterVec_DimensionRift[2], m_MonsterVec_DimensionRift[2], Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(m_MonsterVec_Baruoki[0], m_MonsterVec_Baruoki[0], Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(m_MonsterVec_Acteul[0], m_MonsterVec_Acteul[0], Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(m_MonsterVec_Vasu[0], m_MonsterVec_Vasu[0], Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(m_MonsterVec_Serena[0], m_MonsterVec_Serena[0], Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(m_MonsterVec_Rucyana[0], m_MonsterVec_Rucyana[0], Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(m_MonsterVec_Elzion[0], m_MonsterVec_Elzion[0], Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(m_MonsterVec_LastIsland[0], m_MonsterVec_LastIsland[0], Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(m_MonsterVec_DimensionRift[0], m_MonsterVec_DimensionRift[0], Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(m_MonsterVec_DimensionRift[1], m_MonsterVec_DimensionRift[1], Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(m_MonsterVec_DimensionRift[2], m_MonsterVec_DimensionRift[2], Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
 
-		resize(m_MonsterVec_LOMPSlime[0], m_MonsterVec_LOMPSlime[0], Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
-		resize(m_MonsterVec_LOMPSlime[1], m_MonsterVec_LOMPSlime[1], Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(m_MonsterVec_LOMPSlime[0], m_MonsterVec_LOMPSlime[0], Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+		resize(m_MonsterVec_LOMPSlime[1], m_MonsterVec_LOMPSlime[1], Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
 
 		for (auto i = 0; i < m_DynamicImage.size(); i++)
-			resize(m_DynamicImage[i].image, m_DynamicImage[i].image, Size(), widthPct, heightPct, heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
+			resize(m_DynamicImage[i].image, m_DynamicImage[i].image, Size(), m_widthPct, m_heightPct, m_heightPct >= 1.0 ? INTER_CUBIC : INTER_AREA);
 	}
 
 	rng = std::mt19937(dev());
-	lClickPixelRand = std::uniform_int_distribution<std::mt19937::result_type>(0, (unsigned int) round(widthPct * 7));
+	lClickPixelRand = std::uniform_int_distribution<std::mt19937::result_type>(0, (unsigned int) round(m_widthPct * 7));
 	shortSleepRand = std::uniform_int_distribution<std::mt19937::result_type>(0, 10);
 	sleepRand = std::uniform_int_distribution<std::mt19937::result_type>(0, 50);
 	slideSleepRand = std::uniform_int_distribution<std::mt19937::result_type>(0, 1);
-	slideLClick = std::uniform_int_distribution<std::mt19937::result_type>(0, (unsigned int) round(widthPct * 30));
+	slideLClick = std::uniform_int_distribution<std::mt19937::result_type>(0, (unsigned int) round(m_widthPct * 30));
 	slideRand = std::uniform_int_distribution<std::mt19937::result_type>(0, 2);
 	boolRand = std::uniform_int_distribution<std::mt19937::result_type>(0, 1);
 	slideDistanceRand = std::uniform_int_distribution<std::mt19937::result_type>(0, 100);
 	longSleepRand = std::uniform_int_distribution<std::mt19937::result_type>(0, 1000);
 
-	hdc = GetWindowDC(window);
+	hdc = GetWindowDC(m_window);
 	hDest = CreateCompatibleDC(hdc);
 
 	void* ptrBitmapPixels;
@@ -3035,15 +3019,15 @@ void setup()
 	BITMAPINFO bi;
 	ZeroMemory(&bi, sizeof(BITMAPINFO));
 	bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	bi.bmiHeader.biWidth = width;
-	bi.bmiHeader.biHeight = -height;
+	bi.bmiHeader.biWidth = m_width;
+	bi.bmiHeader.biHeight = -m_height;
 	bi.bmiHeader.biPlanes = 1;
 	bi.bmiHeader.biBitCount = 32;
 	hbDesktop = CreateDIBSection(hdc, &bi, DIB_RGB_COLORS, &ptrBitmapPixels, NULL, 0);
 
 	SelectObject(hDest, hbDesktop);
 
-	bitbltPic = Mat(height, width, CV_8UC4, ptrBitmapPixels, 0);
+	bitbltPic = Mat(m_height, m_width, CV_8UC4, ptrBitmapPixels, 0);
 }
 
 void loadFishingConfig()
@@ -3462,40 +3446,40 @@ void stateSilverHitBell(botState silverHitBellstate)
 	{
 		int i = 0;
 
-		SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
-		SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xCenter, yCenter));
+		SendMessage(m_window, WM_MOUSEACTIVATE, (WPARAM)m_windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+		SendMessage(m_window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(m_xCenter, m_yCenter));
 		sleepR(1);
-		SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xCenter, yCenter));
+		SendMessage(m_window, WM_LBUTTONUP, 0, MAKELPARAM(m_xCenter, m_yCenter));
 		Sleep(3000);
 
-		SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
-		SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xCenter, yCenter));
+		SendMessage(m_window, WM_MOUSEACTIVATE, (WPARAM)m_windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+		SendMessage(m_window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(m_xCenter, m_yCenter));
 		sleepR(1);
-		SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xCenter, yCenter));
+		SendMessage(m_window, WM_LBUTTONUP, 0, MAKELPARAM(m_xCenter, m_yCenter));
 
 		Sleep(1200);
 
-		SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
-		SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xCenter, yCenter));
+		SendMessage(m_window, WM_MOUSEACTIVATE, (WPARAM)m_windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+		SendMessage(m_window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(m_xCenter, m_yCenter));
 		sleepR(1);
-		SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xCenter, yCenter));
+		SendMessage(m_window, WM_LBUTTONUP, 0, MAKELPARAM(m_xCenter, m_yCenter));
 		i++;
 
 		Sleep(1350);
 
-		SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
-		SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xCenter, yCenter));
+		SendMessage(m_window, WM_MOUSEACTIVATE, (WPARAM)m_windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+		SendMessage(m_window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(m_xCenter, m_yCenter));
 		sleepR(1);
-		SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xCenter, yCenter));
+		SendMessage(m_window, WM_LBUTTONUP, 0, MAKELPARAM(m_xCenter, m_yCenter));
 		i++;
 
 		for (; i < 4;) {
 			Sleep(1350);
 
-			SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
-			SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xCenter, yCenter));
+			SendMessage(m_window, WM_MOUSEACTIVATE, (WPARAM)m_windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+			SendMessage(m_window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(m_xCenter, m_yCenter));
 			sleepR(1);
-			SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xCenter, yCenter));
+			SendMessage(m_window, WM_LBUTTONUP, 0, MAKELPARAM(m_xCenter, m_yCenter));
 			i++;
 		}
 
@@ -3518,14 +3502,14 @@ void stateSilverHitBell(botState silverHitBellstate)
 			MSD1 = (int)cv::norm(hitBellPic, bellPicCrop);
 			MSD1 = MSD1 * MSD1 / (int)hitBellPic.total();
 
-			if (MSD1 < msdThreshold)
+			if (MSD1 < m_msdThreshold)
 			{
 				int tosleep = 1;
 				Sleep(tosleep);
-				SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
-				SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xCenter, yCenter));
+				SendMessage(m_window, WM_MOUSEACTIVATE, (WPARAM)m_windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+				SendMessage(m_window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(m_xCenter, m_yCenter));
 				sleepR(1);
-				SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xCenter, yCenter));
+				SendMessage(m_window, WM_LBUTTONUP, 0, MAKELPARAM(m_xCenter, m_yCenter));
 				j = 800;
 				Sleep(j);
 				i++;
@@ -3537,25 +3521,25 @@ void stateSilverHitBell(botState silverHitBellstate)
 			}
 		}
 
-		leftClick(xCenter, yCenter); // miss the bell
+		leftClick(m_xCenter, m_yCenter); // miss the bell
 		Sleep(10000);
 
-		leftClick(xCenter, yCenter);
+		leftClick(m_xCenter, m_yCenter);
 		Sleep(4000);
-		leftClick(xCenter, yCenter);
-		leftClick(xCenter, yCenter);
+		leftClick(m_xCenter, m_yCenter);
+		leftClick(m_xCenter, m_yCenter);
 		Sleep(2000);
 
 		// Click Icon
 		leftClick(613, 286, 5000);
 		// Click Msg
-		leftClick(xCenter, yCenter);
+		leftClick(m_xCenter, m_yCenter);
 		// Click Yes
 		leftClick(m_Button_Yes, 5000);
 		// After Click Yes 1
-		leftClick(xCenter, yCenter, 5000);
+		leftClick(m_xCenter, m_yCenter, 5000);
 		// After Click Yes 2
-		leftClick(xCenter, yCenter, 5000);
+		leftClick(m_xCenter, m_yCenter, 5000);
 	}
 
 }
@@ -3568,10 +3552,10 @@ void stateJumpRopeRatle()
 
 	bool check = false;
 
-	SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
-	SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xCenter, yCenter));
+	SendMessage(m_window, WM_MOUSEACTIVATE, (WPARAM)m_windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+	SendMessage(m_window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(m_xCenter, m_yCenter));
 	sleepR(1);
-	SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xCenter, yCenter));
+	SendMessage(m_window, WM_LBUTTONUP, 0, MAKELPARAM(m_xCenter, m_yCenter));
 
 	Sleep(1000);
 
@@ -3590,10 +3574,10 @@ void stateJumpRopeRatle()
 			{
 				check = false;
 
-				SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
-				SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xCenter, yCenter));
+				SendMessage(m_window, WM_MOUSEACTIVATE, (WPARAM)m_windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+				SendMessage(m_window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(m_xCenter, m_yCenter));
 				sleepR(1);
-				SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xCenter, yCenter));
+				SendMessage(m_window, WM_LBUTTONUP, 0, MAKELPARAM(m_xCenter, m_yCenter));
 				if (q++ == 10001)
 					break;
 			}
@@ -3621,10 +3605,10 @@ void stateJumpRopeBaruoki()
 
 	bool check = true;
 
-	SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
-	SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xCenter, yCenter));
+	SendMessage(m_window, WM_MOUSEACTIVATE, (WPARAM)m_windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+	SendMessage(m_window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(m_xCenter, m_yCenter));
 	sleepR(1);
-	SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xCenter, yCenter));
+	SendMessage(m_window, WM_LBUTTONUP, 0, MAKELPARAM(m_xCenter, m_yCenter));
 
 	Sleep(1000);
 
@@ -3643,10 +3627,10 @@ void stateJumpRopeBaruoki()
 			{
 				check = false;
 
-				SendMessage(window, WM_MOUSEACTIVATE, (WPARAM)windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
-				SendMessage(window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(xCenter, yCenter));
+				SendMessage(m_window, WM_MOUSEACTIVATE, (WPARAM)m_windowTopLevel, MAKELPARAM(HTCLIENT, WM_LBUTTONDOWN));
+				SendMessage(m_window, WM_LBUTTONDOWN, MK_LBUTTON, MAKELPARAM(m_xCenter, m_yCenter));
 				sleepR(1);
-				SendMessage(window, WM_LBUTTONUP, 0, MAKELPARAM(xCenter, yCenter));
+				SendMessage(m_window, WM_LBUTTONUP, 0, MAKELPARAM(m_xCenter, m_yCenter));
 				if (q++ == 10001)
 					break;
 			}
